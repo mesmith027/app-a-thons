@@ -15,8 +15,10 @@ if file is not None:
     num_cells = len(json_data["cells"])
     st.write("Your notebook has",num_cells,"cells")
 
+    full_code = []
+
     for x in range(num_cells):
-        st.write(x)
+        #st.write(x)
         #st.write(json_data["cells"][x])
 
         if json_data["cells"][x]["cell_type"] == "markdown":
@@ -24,10 +26,15 @@ if file is not None:
             for y in range(len(json_data["cells"][x]["source"])):
                 st.markdown(json_data["cells"][x]["source"][y])
         elif json_data["cells"][x]["cell_type"] == "code":
-            st.write(len(json_data["cells"][x]["source"]))
+            #st.write(len(json_data["cells"][x]["source"]))
             for y in range(len(json_data["cells"][x]["source"])):
-                with st.echo():
-                    json_data["cells"][x]["source"][y]
+                #st.write(json_data["cells"][x]["source"][y])
+                st.code(json_data["cells"][x]["source"][y])
+                full_code = full_code.append(json_data["cells"][x]["source"][y])
+                # with st.echo():
+                #     json_data["cells"][x]["source"][y]
+            with st.echo():
+                full_code
         else:
             st.write("unknown cell type")
             st.write(json_data["cells"][x]["cell_type"])
