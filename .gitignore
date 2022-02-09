@@ -130,3 +130,6 @@ dmypy.json
 
 #apple DS_Store
 .DS_Store
+
+# streamlit
+.streamlit/secrets.toml
