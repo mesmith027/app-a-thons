@@ -28,10 +28,10 @@ if 'team_chosen' not in st.session_state:
     st.session_state.category = ""
 
 def team_chosen():
-    st.session_state["team_chosen"] = True
+    st.session_state["team_chosen"] = not st.session_state.team_chosen
     return
 
-st.title("Quantum-Apps Hackathon")
+st.title(":atom_symbol: Quantum-Apps Hackathon :atom_symbol:")
 with st.sidebar:
     page = st.radio("Page", ["Home", "Register", "Submit", "Statistics"])
 
@@ -41,11 +41,11 @@ if page == "Home":
     Sciences of the Autonomous University of Chihuahua, but also at students of
     related areas in other faculties of the same university.
 
-### Requirements:
+### :books: Requirements:
 - Enrolled students or recent graduates (no more than six months after graduation) may participate.
 - Register by filling out the fields on this page.
 
-### Rules:
+### :1234: Rules:
 - Teams of up to 4 contestants are allowed.
 - The same person cannot be in more than one team.
 - Participants can have a mentor (optional), who must be registered.
@@ -144,7 +144,7 @@ If the team name you have chosen is taken already, please choose a different nam
         st.write(f'**Category:** {st.session_state.category}')
         if len(mentor_name) > 1:
             st.write(f'**Mentor:** {st.session_state.mentor}')
-        submit = st.button("Confirm team entry")
+        submit = st.button("Confirm team entry", on_click=team_chosen)
         if submit:
             #send to google sheet
             st.balloons()
@@ -152,7 +152,16 @@ If the team name you have chosen is taken already, please choose a different nam
 elif page == "Submit":
     st.write("underconstruction")
 else:
-    # Print results.
+    st.subheader("Take a look at the current teams!")
+
+    team_number = 0
     for row in rows:
-        st.write(type(row))
+        team_number += 1
+        #st.write(row)
+
+    st.write(f"There are currently {team_number} teams participating! :tada:")
+
+    # Print results.
+
+    for row in rows:
         st.write(row)
