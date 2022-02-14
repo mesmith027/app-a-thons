@@ -1,6 +1,7 @@
 import streamlit as st
-from gsheetsdb import connect
+from gsheetsdb import connect # to connect and look at data
 from google.oauth2 import service_account
+import gspread # to write data to the DB
 import plotly.express as px
 import pandas as pd
 
@@ -19,10 +20,6 @@ conn = connect(credentials=credentials)
 def run_query(query):
     rows = conn.execute(query, headers=1)
     return rows
-
-def submit_team(query):
-    conn.execute(query)
-    return
 
 sheet_url = st.secrets["private_gsheets_url"]
 rows = run_query(f'SELECT * FROM "{sheet_url}"')
@@ -139,7 +136,7 @@ If the team name you have chosen is taken already, please choose a different nam
         st.write("---")
 
         #add details to session state
-        st.session_state.members = member_list
+        st.session_state.members = str(member_list)
         st.session_state.mentor = mentor_name
         st.session_state.category = category
 
@@ -148,12 +145,33 @@ If the team name you have chosen is taken already, please choose a different nam
         st.write(f'**Team name:** {st.session_state.team_name}')
         st.write(f'**Team Member(s):** {st.session_state.members}')
         st.write(f'**Category:** {st.session_state.category}')
+        st.write(f'**Password:** {st.session_state.password}')
         if len(mentor_name) > 1:
             st.write(f'**Mentor:** {st.session_state.mentor}')
         submit = st.button("Confirm team entry", on_click=team_chosen)
         if submit:
             #send to google sheet
-            submit_team(f'INSERT INTO {sheet_url} (Team, Password, Participants, Mentor, Category) VALUES ({st.session_state.team_name},{st.session_state.password},{st.session_state.members},{st.session_state.mentor},{st.session_state.category})')
+            ## write results to google sheets
+            gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+            sheet_url = st.secrets["private_gsheets_url"]
+            data = gc.open_by_url(sheet_url).sheet1
+            #st.write(data.get_values())
+            #st.write("row:", data.row_values(2))
+            #st.write("row type:", type(data.row_values(2)))
+            #row = data.row_values(2)
+            #st.write("participants type:", type(row[2]))
+            #st.write("Mambers type:", type(st.session_state.members))
+            data.append_row(
+                [
+                    st.session_state.team_name,
+                    st.session_state.password,
+                    st.session_state.members,
+                    st.session_state.mentor,
+                    st.session_state.category,
+                ]
+            )
+            del st.session_state.password
+            st.info("team information submitted")
             st.balloons()
 
 elif page == "Submit":
