@@ -25,13 +25,49 @@ sheet_url = st.secrets["private_gsheets_url"]
 rows = run_query(f'SELECT * FROM "{sheet_url}"')
 
 if 'team_chosen' not in st.session_state:
+    st.session_state.reg_start = False
     st.session_state.team_chosen = False
+    st.session_state.team_name = ""
     st.session_state.members = []
     st.session_state.mentor = ""
     st.session_state.category = ""
 
-def team_chosen():
-    st.session_state["team_chosen"] = not st.session_state.team_chosen
+
+def team_chosen(team_name):
+    #set flag to open next step of app
+    st.session_state["team_chosen"] = True
+
+    #save team name to state
+    st.session_state.team_name = team_name
+
+    # registration process started, switch flag
+    st.session_state.reg_start = True
+    return
+
+def submit_data():
+    ## write results to google sheets
+    gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+    sheet_url = st.secrets["private_gsheets_url"]
+    data = gc.open_by_url(sheet_url).sheet1
+
+    data.append_row(
+        [
+            st.session_state.team_name,
+            st.session_state.password,
+            st.session_state.members,
+            st.session_state.mentor,
+            st.session_state.category,
+        ]
+    )
+
+    # reset state
+    del st.session_state.password
+    del st.session_state.team_name
+    st.session_state["team_chosen"] = False
+    st.session_state.reg_start = False
+    st.session_state.members = []
+    st.session_state.mentor = ""
+    st.session_state.category = ""
     return
 
 st.title(":atom_symbol: Quantum-Apps Hackathon :atom_symbol:")
@@ -47,6 +83,18 @@ if page == "Home":
 ### :books: Requirements:
 - Enrolled students or recent graduates (no more than six months after graduation) may participate.
 - Register by filling out the fields on this page.
+
+### :alembic: Categories:
+
+- **Quantum Phenomena:** anything to do with the quantum realm
+- **Water care and food sustainability:**
+- **Visualization and data management:** Create an app that manages large sets of data or \
+uses interactivity to vizualie the data in interesting ways. For example:
+    - for the conservation of the environment
+    - for mapping geographical data
+- **Use of artificial intelligence and data science in Science**
+- **Fight emerging diseases**
+- **Educational apps**
 
 ### :1234: Rules:
 - Teams of up to 4 contestants are allowed.
@@ -66,10 +114,18 @@ For example: if your team name is "The A team", **The_A_team** OR **The-A-team**
 If the team name you have chosen is taken already, please choose a different name to make sure there
     there is no confusion when winners are announced! """)
 
-    # choosing a team name
-    team_name = st.text_input("Team name", key="team_name")
+    #check to see if user started registering and stopped part way through
+    if st.session_state.reg_start:
+        team_memory = st.session_state.team_name
+        password_memory = st.session_state.password
+    else:
+        team_memory = ""
+        password_memory = ""
 
-    if len(team_name) > 0:
+    # choosing a team name
+    team_name = st.text_input("Team name", value = team_memory)
+    st.session_state
+    if (len(team_name) > 0):
         # make sure there are no spaces
         if ' ' in team_name:
             st.warning("Please remove spaces in your team name")
@@ -88,12 +144,13 @@ If the team name you have chosen is taken already, please choose a different nam
         # if team name is valid, continue to making a password
         st.info("Team name available, please continue")
         st.write(f'You have chosen a team name of: **{team_name}**')
-        st.button("Continue with this team name?", on_click=team_chosen)
+        st.session_state
+        st.button("Continue with this team name?", on_click=team_chosen, args=(team_name))
 
 # create password for team
     if st.session_state["team_chosen"]:
         #password field
-        pass_1 = st.text_input("Team Password",type="password")
+        pass_1 = st.text_input("Team Password",value=password_memory,type="password")
         #double check that its not a typo
         pass_2 = st.text_input("Confirm password",type="password")
 
@@ -141,36 +198,16 @@ If the team name you have chosen is taken already, please choose a different nam
         st.session_state.category = category
 
         #review entry and submit to google sheet
-        st.write("Review and confirm your entry:")
+        st.subheader("Review and confirm your entry:")
         st.write(f'**Team name:** {st.session_state.team_name}')
         st.write(f'**Team Member(s):** {st.session_state.members}')
         st.write(f'**Category:** {st.session_state.category}')
         st.write(f'**Password:** {st.session_state.password}')
         if len(mentor_name) > 1:
             st.write(f'**Mentor:** {st.session_state.mentor}')
-        submit = st.button("Confirm team entry", on_click=team_chosen)
+        submit = st.button("Confirm team entry", on_click=submit_data)
         if submit:
-            #send to google sheet
-            ## write results to google sheets
-            gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-            sheet_url = st.secrets["private_gsheets_url"]
-            data = gc.open_by_url(sheet_url).sheet1
-            #st.write(data.get_values())
-            #st.write("row:", data.row_values(2))
-            #st.write("row type:", type(data.row_values(2)))
-            #row = data.row_values(2)
-            #st.write("participants type:", type(row[2]))
-            #st.write("Mambers type:", type(st.session_state.members))
-            data.append_row(
-                [
-                    st.session_state.team_name,
-                    st.session_state.password,
-                    st.session_state.members,
-                    st.session_state.mentor,
-                    st.session_state.category,
-                ]
-            )
-            del st.session_state.password
+
             st.info("team information submitted")
             st.balloons()
 
