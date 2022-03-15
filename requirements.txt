@@ -3,3 +3,4 @@ pandas
 plotly==5.1.0
 gsheetsdb==0.1.13.1
 gspread==5.2.0
+pytz

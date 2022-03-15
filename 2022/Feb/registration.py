@@ -4,6 +4,8 @@ from google.oauth2 import service_account
 import gspread  # to write data to the DB
 import plotly.express as px
 import pandas as pd
+import pytz
+from datetime import datetime
 
 # Create a connection object.
 credentials = service_account.Credentials.from_service_account_info(
@@ -73,6 +75,35 @@ def reset():
     for key in st.session_state.keys():
         del st.session_state[key]
     return
+
+def submit_project(row, idx):
+    github_url = st.text_input("Enter your GitHub repo URL")
+    app_url = st.text_input("Enter your Streamlit Cloud app URL")
+
+
+    if github_url and app_url:
+        if 'github.com' not in github_url:
+            st.warning("Please enter a valid GitHub repo URL")
+            st.stop()
+        
+        if 'share.streamlit.io' not in app_url:
+            st.warning("Please enter a valid Streamlit Cloud app URL")
+            st.stop()
+        
+        submit = st.button("Submit project")
+        if submit:
+            gc = gspread.service_account_from_dict(
+                st.secrets["gcp_service_account"]
+            )
+            sheet_url = st.secrets["private_gsheets_url"]
+            data = gc.open_by_url(sheet_url).sheet1
+            data.update(f"F{idx+2}", github_url)
+            data.update(f"G{idx+2}", app_url)
+            data.update(f"H{idx+2}", str(datetime.now(tz=pytz.utc)))
+
+            st.success("Project submitted")
+            st.balloons()
+            st.stop()
 
 
 st.title(":atom_symbol: Quantum-Apps Hackathon :atom_symbol:")
@@ -254,6 +285,7 @@ If the team name you have chosen is taken already, please choose a different nam
                     st.session_state.members,
                     st.session_state.mentor_name,
                     st.session_state.category,
+                    str(datetime.now(tz=pytz.utc)),
                 ]
             )
 
@@ -277,7 +309,72 @@ If the team name you have chosen is taken already, please choose a different nam
             )
 
 elif page == "Submit":
-    st.write("underconstruction")
+    team_name = st.text_input(
+        "Team name",
+        value=st.session_state.team,
+        key="team_name",
+        on_change=update_team_name,
+    )
+
+    pass_2 = st.text_input(
+        "Enter password",
+        value=st.session_state.pwd,
+        type="password",
+        key="password",
+    )
+
+    if team_name and pass_2:
+        update_password()
+        if len(team_name) > 0:
+            # make sure there are no spaces
+            if " " in team_name:
+                st.warning("Please remove spaces in your team name")
+                st.stop()
+            # remove dashes and underscores and case sensitivity for comparing
+            # makes case insensitive (A-team = a-team)
+            team_short = team_name.replace("-", "").replace("_", "").casefold()
+
+            # compare team name to those in database
+            idx = 0
+            for row in rows:
+                if {team_short: pass_2} == {
+                    row.Team.replace("-", "").replace("_", "").casefold(): row.Password
+                }:
+                    st.write(
+                        f"Welcome back **`{team_name}`**. You can now edit your project and submit it to the competition."
+                    )
+                    if st.checkbox("Show registration details"):
+                        st.write(
+                            {
+                                "Team name": row.Team,
+                                "Password": row.Password,
+                                "Team Members": row.Participants,
+                                "Mentor": row.Mentor,
+                                "Category": row.Category,
+                                "GitHub Repo": row.GitHub,
+                                "App URL": row.App,
+                            }
+                        )
+
+                    # If repo and app exist, ask if they want to update
+                    if row.GitHub and row.App:
+                        st.write(
+                            "Your project is already submitted. Do you want to overwrite it?"
+                        )
+                        if st.checkbox("Overwrite"):
+                            submit_project(row, idx)
+                            
+                    else:
+                        submit_project(row, idx)
+
+                    break
+
+                idx += 1
+
+            if idx == len(rows.fetchall()):
+                st.error("Incorrect password or team name")
+                st.stop()
+
 
 else:
     st.subheader("Take a look at the current teams!")
