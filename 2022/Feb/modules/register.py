@@ -4,7 +4,7 @@ import pandas as pd
 import pytz
 from datetime import datetime
 
-from utils import (
+from .utils import (
     team_chosen,
     update_team_name,
     update_password,
@@ -14,6 +14,7 @@ from utils import (
     update_category,
     reset,
     submit_project,
+    disable_widgets,
 )
 
 repo = ""
@@ -22,6 +23,10 @@ app = ""
 
 def register_page(rows):
     st.title(":atom_symbol: Quantum-Apps Hackathon :atom_symbol:")
+
+    if st.session_state["disabled"]:
+        st.info("Please reload this page to enable registration")
+
     st.subheader("Register your team here:")
     st.write(
         """Your team name cannot have any spaces, if you wish you can use an underscore (_) or
@@ -39,6 +44,7 @@ If the team name you have chosen is taken already, please choose a different nam
         value=st.session_state.team,
         key="team_name",
         on_change=update_team_name,
+        disabled=st.session_state.disabled
     )
 
     if len(team_name) > 0:
@@ -60,13 +66,13 @@ If the team name you have chosen is taken already, please choose a different nam
         # if team name is valid, continue to making a password
         st.info("Team name available, please continue")
         st.write(f"You have chosen a team name of: **`{team_name}`**")
-        st.button("Continue with this team name?", on_click=team_chosen)
+        st.button("Continue with this team name?", on_click=team_chosen, disabled=st.session_state.disabled)
 
     # create password for team
     if st.session_state["team_chosen"]:
         # password field
         pass_1 = st.text_input(
-            "Team Password", value=st.session_state.pwd, type="password"
+            "Team Password", value=st.session_state.pwd, type="password", disabled=st.session_state.disabled
         )
         # double check that its not a typo
         pass_2 = st.text_input(
@@ -74,6 +80,7 @@ If the team name you have chosen is taken already, please choose a different nam
             value=st.session_state.pwd,
             type="password",
             key="password",
+            disabled=st.session_state.disabled
         )
 
         if pass_1 and pass_2:
@@ -99,6 +106,7 @@ If the team name you have chosen is taken already, please choose a different nam
                 value=st.session_state.mentor,
                 key="mentor_name",
                 on_change=update_mentor,
+                disabled=st.session_state.disabled
             )
 
         # a number input controls the number of text fields
@@ -109,6 +117,7 @@ If the team name you have chosen is taken already, please choose a different nam
             value=st.session_state.num_teams,
             key="team_count",
             on_change=update_team_count,
+            disabled=st.session_state.disabled
         )
         st.write("Enter the full name of all participants on your team:")
 
@@ -125,6 +134,7 @@ If the team name you have chosen is taken already, please choose a different nam
                 key=f"team_member_name_{x}",
                 on_change=update_team_member,
                 args=(x,),
+                disabled=st.session_state.disabled
             )
             member_list.append(member)
 
@@ -144,6 +154,7 @@ If the team name you have chosen is taken already, please choose a different nam
             key="category",
             on_change=update_category,
             args=(category_dict,),
+            disabled=st.session_state.disabled
         )
         st.write("---")
 
@@ -161,7 +172,7 @@ If the team name you have chosen is taken already, please choose a different nam
         if len(mentor_name) > 1:
             st.write(f"**Mentor: `{st.session_state.mentor}`**")
 
-        submit = st.button("Confirm team entry", on_click=team_chosen)
+        submit = st.button("Confirm team entry", on_click=team_chosen, disabled=st.session_state.disabled)
 
         if submit:
             # send to google sheet
@@ -200,3 +211,5 @@ If the team name you have chosen is taken already, please choose a different nam
                 mime="text/csv",
                 on_click=reset,
             )
+
+            st.info("Please reload this page if you wish to make another registration")

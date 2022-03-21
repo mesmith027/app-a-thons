@@ -7,10 +7,12 @@ import pandas as pd
 import pytz
 from datetime import datetime
 
-import home
-import register
-import submit
-import stats
+from modules import (
+    home,
+    register,
+    submit,
+    stats
+)
 
 st.set_page_config(page_title="Quantum-Apps Hackathon", page_icon="⚛️")
 
@@ -48,6 +50,9 @@ if "pwd" not in st.session_state:
 
 if "num_teams" not in st.session_state:
     st.session_state["num_teams"] = 1
+
+if "disabled" not in st.session_state:
+    st.session_state["disabled"] = False
 
 
 title_to_app = {
